@@ -1,0 +1,85 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: airsense_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: airsense
+      POSTGRES_PASSWORD: airsense_secure_pass
+      POSTGRES_DB: airsense_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - airsense_pgdata:/var/lib/postgresql/data
+      - ./infra/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airsense -d airsense_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: airsense_redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - "6379:6379"
+    volumes:
+      - airsense_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: airsense_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://airsense:airsense_secure_pass@postgres:5432/airsense_db
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: development
+      API_PORT: 8000
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-AQ.Ab8RN6JzzpAVgRc_HQtUGMRaF0Byk2Q4t17kxYqRF0y7YINp9w}
+    env_file:
+      - .env
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages/data_adapters:/app/packages/data_adapters
+      - ./packages/domain:/app/packages/domain
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/v1/ops/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: airsense_web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  airsense_pgdata:
+    name: airsense_pgdata
+  airsense_redisdata:
+    name: airsense_redisdata

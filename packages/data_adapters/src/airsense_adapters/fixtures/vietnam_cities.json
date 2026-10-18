@@ -1,0 +1,406 @@
+[
+  {
+    "id": "tp-ho-chi-minh",
+    "name": "TP. Hồ Chí Minh",
+    "country": "Việt Nam",
+    "center_lat": 10.7769,
+    "center_lon": 106.7009,
+    "zoom_level": 11.2,
+    "current_aqi": 85,
+    "category": "MODERATE",
+    "label_vi": "Trung bình",
+    "color_hex": "#EAB308",
+    "districts": [
+      {
+        "id": "hcm-ben-nghe",
+        "name": "Phường Bến Nghé",
+        "latitude": 10.7756,
+        "longitude": 106.7004,
+        "aqi_value": 85,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      },
+      {
+        "id": "hcm-thao-dien",
+        "name": "Phường Thảo Điền",
+        "latitude": 10.8030,
+        "longitude": 106.7380,
+        "aqi_value": 58,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      },
+      {
+        "id": "hcm-tan-son-nhat",
+        "name": "Phường Tân Sơn Nhất",
+        "latitude": 10.8167,
+        "longitude": 106.6667,
+        "aqi_value": 116,
+        "category": "UNHEALTHY_SENSITIVE",
+        "label_vi": "Kém",
+        "color_hex": "#F97316"
+      },
+      {
+        "id": "hcm-gia-dinh",
+        "name": "Phường Gia Định",
+        "latitude": 10.8115,
+        "longitude": 106.7112,
+        "aqi_value": 138,
+        "category": "UNHEALTHY_SENSITIVE",
+        "label_vi": "Kém",
+        "color_hex": "#F97316"
+      },
+      {
+        "id": "hcm-phu-my",
+        "name": "Phường Phú Mỹ",
+        "latitude": 10.7333,
+        "longitude": 106.7167,
+        "aqi_value": 52,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      },
+      {
+        "id": "hcm-tan-kien",
+        "name": "Xã Tân Kiên",
+        "latitude": 10.6875,
+        "longitude": 106.5925,
+        "aqi_value": 72,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      },
+      {
+        "id": "hcm-hiep-phu",
+        "name": "Phường Hiệp Phú",
+        "latitude": 10.8500,
+        "longitude": 106.7833,
+        "aqi_value": 61,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      }
+    ]
+  },
+  {
+    "id": "ha-noi",
+    "name": "Hà Nội",
+    "country": "Việt Nam",
+    "center_lat": 21.0285,
+    "center_lon": 105.8542,
+    "zoom_level": 11.0,
+    "current_aqi": 128,
+    "category": "UNHEALTHY_SENSITIVE",
+    "label_vi": "Kém",
+    "color_hex": "#F97316",
+    "districts": [
+      {
+        "id": "hn-trang-tien",
+        "name": "Phường Tràng Tiền",
+        "latitude": 21.0260,
+        "longitude": 105.8550,
+        "aqi_value": 118,
+        "category": "UNHEALTHY_SENSITIVE",
+        "label_vi": "Kém",
+        "color_hex": "#F97316"
+      },
+      {
+        "id": "hn-dich-vong-hau",
+        "name": "Phường Dịch Vọng Hậu",
+        "latitude": 21.0362,
+        "longitude": 105.7905,
+        "aqi_value": 145,
+        "category": "UNHEALTHY_SENSITIVE",
+        "label_vi": "Kém",
+        "color_hex": "#F97316"
+      },
+      {
+        "id": "hn-o-cho-dua",
+        "name": "Phường Ô Chợ Dừa",
+        "latitude": 21.0180,
+        "longitude": 105.8280,
+        "aqi_value": 138,
+        "category": "UNHEALTHY_SENSITIVE",
+        "label_vi": "Kém",
+        "color_hex": "#F97316"
+      },
+      {
+        "id": "hn-quang-an",
+        "name": "Phường Quảng An",
+        "latitude": 21.0667,
+        "longitude": 105.8278,
+        "aqi_value": 92,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      },
+      {
+        "id": "hn-bach-khoa",
+        "name": "Phường Bách Khoa",
+        "latitude": 21.0069,
+        "longitude": 105.8575,
+        "aqi_value": 135,
+        "category": "UNHEALTHY_SENSITIVE",
+        "label_vi": "Kém",
+        "color_hex": "#F97316"
+      },
+      {
+        "id": "hn-bo-de",
+        "name": "Phường Bồ Đề",
+        "latitude": 21.0456,
+        "longitude": 105.8983,
+        "aqi_value": 88,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      }
+    ]
+  },
+  {
+    "id": "da-nang",
+    "name": "Đà Nẵng",
+    "country": "Việt Nam",
+    "center_lat": 16.0544,
+    "center_lon": 108.2022,
+    "zoom_level": 11.5,
+    "current_aqi": 38,
+    "category": "GOOD",
+    "label_vi": "Tốt",
+    "color_hex": "#10B981",
+    "districts": [
+      {
+        "id": "dn-thach-thang",
+        "name": "Phường Thạch Thang",
+        "latitude": 16.0740,
+        "longitude": 108.2190,
+        "aqi_value": 42,
+        "category": "GOOD",
+        "label_vi": "Tốt",
+        "color_hex": "#10B981"
+      },
+      {
+        "id": "dn-xuan-ha",
+        "name": "Phường Xuân Hà",
+        "latitude": 16.0667,
+        "longitude": 108.1833,
+        "aqi_value": 46,
+        "category": "GOOD",
+        "label_vi": "Tốt",
+        "color_hex": "#10B981"
+      },
+      {
+        "id": "dn-phuoc-my",
+        "name": "Phường Phước Mỹ",
+        "latitude": 16.0680,
+        "longitude": 108.2430,
+        "aqi_value": 26,
+        "category": "GOOD",
+        "label_vi": "Tốt",
+        "color_hex": "#10B981"
+      },
+      {
+        "id": "dn-hoa-hai",
+        "name": "Phường Hòa Hải",
+        "latitude": 16.0028,
+        "longitude": 108.2611,
+        "aqi_value": 31,
+        "category": "GOOD",
+        "label_vi": "Tốt",
+        "color_hex": "#10B981"
+      },
+      {
+        "id": "dn-hoa-hiep-bac",
+        "name": "Phường Hòa Hiệp Bắc",
+        "latitude": 16.0889,
+        "longitude": 108.1472,
+        "aqi_value": 58,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      }
+    ]
+  },
+  {
+    "id": "hai-phong",
+    "name": "Hải Phòng",
+    "country": "Việt Nam",
+    "center_lat": 20.8449,
+    "center_lon": 106.6881,
+    "zoom_level": 11.0,
+    "current_aqi": 96,
+    "category": "MODERATE",
+    "label_vi": "Trung bình",
+    "color_hex": "#EAB308",
+    "districts": [
+      {
+        "id": "hp-thuy-duong",
+        "name": "Phường Thủy Đường",
+        "latitude": 20.9333,
+        "longitude": 106.6833,
+        "aqi_value": 78,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      },
+      {
+        "id": "hp-an-dong",
+        "name": "Phường An Đồng",
+        "latitude": 20.8667,
+        "longitude": 106.6000,
+        "aqi_value": 86,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      },
+      {
+        "id": "hp-hoang-van-thu",
+        "name": "Phường Hoàng Văn Thụ",
+        "latitude": 20.8667,
+        "longitude": 106.6667,
+        "aqi_value": 94,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      },
+      {
+        "id": "hp-lac-vien",
+        "name": "Phường Lạc Viên",
+        "latitude": 20.8500,
+        "longitude": 106.7000,
+        "aqi_value": 112,
+        "category": "UNHEALTHY_SENSITIVE",
+        "label_vi": "Kém",
+        "color_hex": "#F97316"
+      },
+      {
+        "id": "hp-vinh-niem",
+        "name": "Phường Vĩnh Niệm",
+        "latitude": 20.8333,
+        "longitude": 106.6833,
+        "aqi_value": 89,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      }
+    ]
+  },
+  {
+    "id": "can-tho",
+    "name": "Cần Thơ",
+    "country": "Việt Nam",
+    "center_lat": 10.0452,
+    "center_lon": 105.7469,
+    "zoom_level": 11.5,
+    "current_aqi": 48,
+    "category": "GOOD",
+    "label_vi": "Tốt",
+    "color_hex": "#10B981",
+    "districts": [
+      {
+        "id": "ct-tan-an",
+        "name": "Phường Tân An",
+        "latitude": 10.0333,
+        "longitude": 105.7833,
+        "aqi_value": 52,
+        "category": "MODERATE",
+        "label_vi": "Trung bình",
+        "color_hex": "#EAB308"
+      },
+      {
+        "id": "ct-hung-phu",
+        "name": "Phường Hưng Phú",
+        "latitude": 9.9917,
+        "longitude": 105.7500,
+        "aqi_value": 41,
+        "category": "GOOD",
+        "label_vi": "Tốt",
+        "color_hex": "#10B981"
+      },
+      {
+        "id": "ct-binh-thuy",
+        "name": "Phường Bình Thủy",
+        "latitude": 10.0833,
+        "longitude": 105.7167,
+        "aqi_value": 46,
+        "category": "GOOD",
+        "label_vi": "Tốt",
+        "color_hex": "#10B981"
+      },
+      {
+        "id": "ct-chau-van-liem",
+        "name": "Phường Châu Văn Liêm",
+        "latitude": 10.1167,
+        "longitude": 105.6333,
+        "aqi_value": 44,
+        "category": "GOOD",
+        "label_vi": "Tốt",
+        "color_hex": "#10B981"
+      }
+    ]
+  },
+  {
+    "id": "thua-thien-hue",
+    "name": "Thành phố Huế",
+    "country": "Việt Nam",
+    "center_lat": 16.4637,
+    "center_lon": 107.5909,
+    "zoom_level": 11.5,
+    "current_aqi": 34,
+    "category": "GOOD",
+    "label_vi": "Tốt",
+    "color_hex": "#10B981",
+    "districts": [
+      {
+        "id": "hue-thuan-loc",
+        "name": "Phường Thuận Lộc",
+        "latitude": 16.4760,
+        "longitude": 107.5810,
+        "aqi_value": 30,
+        "category": "GOOD",
+        "label_vi": "Tốt",
+        "color_hex": "#10B981"
+      },
+      {
+        "id": "hue-vinh-ninh",
+        "name": "Phường Vĩnh Ninh",
+        "latitude": 16.4550,
+        "longitude": 107.5950,
+        "aqi_value": 35,
+        "category": "GOOD",
+        "label_vi": "Tốt",
+        "color_hex": "#10B981"
+      },
+      {
+        "id": "hue-thuy-duong",
+        "name": "Phường Thủy Dương",
+        "latitude": 16.4150,
+        "longitude": 107.6180,
+        "aqi_value": 42,
+        "category": "GOOD",
+        "label_vi": "Tốt",
+        "color_hex": "#10B981"
+      },
+      {
+        "id": "hue-kim-long",
+        "name": "Phường Kim Long",
+        "latitude": 16.4580,
+        "longitude": 107.5540,
+        "aqi_value": 29,
+        "category": "GOOD",
+        "label_vi": "Tốt",
+        "color_hex": "#10B981"
+      },
+      {
+        "id": "hue-phong-dien",
+        "name": "Xã Phong Hiền",
+        "latitude": 16.5833,
+        "longitude": 107.3833,
+        "aqi_value": 32,
+        "category": "GOOD",
+        "label_vi": "Tốt",
+        "color_hex": "#10B981"
+      }
+    ]
+  }
+]

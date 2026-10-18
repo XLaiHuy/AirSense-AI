@@ -1,0 +1,22 @@
+{
+  "exclude": [
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/__pycache__/**",
+    "**/.next/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/data/raw/**",
+    "**/data/fixtures/**",
+    "**/*.geojson",
+    "**/*.tif",
+    "**/*.tiff",
+    "**/*.pt",
+    "**/*.bin",
+    "**/*.onnx",
+    "**/*.parquet",
+    "**/*.csv",
+    "**/.git/**",
+    "**/docker_volumes/**"
+  ]
+}

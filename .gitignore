@@ -1,0 +1,134 @@
+# ==============================================================================
+# AirSense AI - Enterprise Multi-Language .gitignore
+# Stack: Next.js 14 (TypeScript) + FastAPI (Python) + Docker + PostGIS
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Environment Variables & Secret Credentials (CRITICAL: NEVER COMMIT)
+# ------------------------------------------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+*.pem
+*.key
+*.cert
+*.crt
+credentials.json
+service-account*.json
+
+# ------------------------------------------------------------------------------
+# 2. Node.js & Next.js Web Frontend (apps/web)
+# ------------------------------------------------------------------------------
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+out/
+**/out/
+build/
+dist/
+.pnp
+.pnp.js
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Next.js Build Traces & Cache
+.turbo/
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+# ------------------------------------------------------------------------------
+# 3. Python & FastAPI Backend (apps/api & packages)
+# ------------------------------------------------------------------------------
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / Packaging
+eggs/
+.eggs/
+*.egg-info/
+*.egg
+
+# Virtual Environments
+.venv/
+**/.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing & Coverage
+.pytest_cache/
+**/.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# ------------------------------------------------------------------------------
+# 4. Large AI/ML Model Weights & Heavy Datasets (> 100MB should use S3/HF Hub)
+# ------------------------------------------------------------------------------
+*.pt
+*.pth
+*.onnx
+*.bin
+*.h5
+*.tflite
+*.safetensors
+*.ckpt
+*.joblib
+models/weights/
+**/models/weights/
+data/raw/
+data/processed/
+data/cache/
+*.parquet
+*.feather
+*.geoparquet
+*.tar.gz
+*.zip
+
+# ------------------------------------------------------------------------------
+# 5. OS & IDE System Files
+# ------------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDEs
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.sublime-workspace
+*.sublime-project
+
+# ------------------------------------------------------------------------------
+# 6. Docker & Local Agent Scratch/Artifacts
+# ------------------------------------------------------------------------------
+.docker/
+*.log
+docker-compose.override.yml
+.codegraph/
