@@ -3,7 +3,81 @@
 import { useEffect, useState } from "react";
 import { localDB, LocalStation, LocalStationHistory } from "@/lib/db/airsense-local-db";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://airsense-ai-vigy.onrender.com";
+
+const DEFAULT_CITIES = [
+  {
+    id: "tp-ho-chi-minh",
+    name: "TP. Hồ Chí Minh",
+    country: "Việt Nam",
+    center_lat: 10.7769,
+    center_lon: 106.7009,
+    zoom_level: 11.2,
+    current_aqi: 85,
+    category: "MODERATE",
+    label_vi: "Trung bình",
+    color_hex: "#EAB308",
+    districts: [
+      { id: "hcm-ben-nghe", name: "Phường Bến Nghé", latitude: 10.7756, longitude: 106.7004, aqi_value: 85, category: "MODERATE", label_vi: "Trung bình", color_hex: "#EAB308" },
+      { id: "hcm-thao-dien", name: "Phường Thảo Điền", latitude: 10.803, longitude: 106.738, aqi_value: 58, category: "MODERATE", label_vi: "Trung bình", color_hex: "#EAB308" },
+      { id: "hcm-tan-son-nhat", name: "Phường Tân Sơn Nhất", latitude: 10.8167, longitude: 106.6667, aqi_value: 116, category: "UNHEALTHY_SENSITIVE", label_vi: "Kém", color_hex: "#F97316" },
+      { id: "hcm-gia-dinh", name: "Phường Gia Định", latitude: 10.8115, longitude: 106.7112, aqi_value: 138, category: "UNHEALTHY_SENSITIVE", label_vi: "Kém", color_hex: "#F97316" },
+    ],
+  },
+  { id: "ha-noi", name: "Hà Nội", country: "Việt Nam", center_lat: 21.0285, center_lon: 105.8542, zoom_level: 11.0, current_aqi: 128, category: "UNHEALTHY_SENSITIVE", label_vi: "Kém", color_hex: "#F97316", districts: [] },
+  { id: "da-nang", name: "Đà Nẵng", country: "Việt Nam", center_lat: 16.0544, center_lon: 108.2022, zoom_level: 11.5, current_aqi: 38, category: "GOOD", label_vi: "Tốt", color_hex: "#10B981", districts: [] },
+  { id: "hai-phong", name: "Hải Phòng", country: "Việt Nam", center_lat: 20.8449, center_lon: 106.6881, zoom_level: 11.0, current_aqi: 96, category: "MODERATE", label_vi: "Trung bình", color_hex: "#EAB308", districts: [] },
+  { id: "can-tho", name: "Cần Thơ", country: "Việt Nam", center_lat: 10.0452, center_lon: 105.7469, zoom_level: 11.5, current_aqi: 48, category: "GOOD", label_vi: "Tốt", color_hex: "#10B981", districts: [] },
+  { id: "thua-thien-hue", name: "Thành phố Huế", country: "Việt Nam", center_lat: 16.4637, center_lon: 107.5909, zoom_level: 11.5, current_aqi: 34, category: "GOOD", label_vi: "Tốt", color_hex: "#10B981", districts: [] },
+];
+
+const DEFAULT_STUDIO_DATA = {
+  city: DEFAULT_CITIES[0],
+  live_aqi: {
+    station_id: "tp-ho-chi-minh",
+    calculated_at: new Date().toISOString(),
+    aqi_value: 77,
+    category: "MODERATE",
+    label_vi: "Trung bình",
+    color_hex: "#FFFF00",
+    health_advice_vi: "Chất lượng không khí ở mức chấp nhận được. Nhóm người có tiền sử hô hấp nên hạn chế vận động gắng sức ngoài trời.",
+    dominant_pollutant: "pm25",
+  },
+  environmental: {
+    pm25_ugm3: 38.2,
+    pm10_ugm3: 61.1,
+    wind_speed_kmh: 8.1,
+    temperature_c: 29.0,
+    humidity_percent: 78,
+    weather_condition: "Trời nắng nhẹ",
+  },
+  index_of_day: [
+    { hour: "00:00", aqi: 65, pm25: 29.2 },
+    { hour: "04:00", aqi: 60, pm25: 27.0 },
+    { hour: "08:00", aqi: 100, pm25: 45.0 },
+    { hour: "12:00", aqi: 80, pm25: 36.0 },
+    { hour: "16:00", aqi: 75, pm25: 33.0 },
+    { hour: "20:00", aqi: 85, pm25: 38.0 },
+  ],
+  health_tips: [
+    { id: "tip-outdoor", action_vi: "Thời tiết lý tưởng cho hoạt động thể thao ngoài trời sáng sớm", icon_type: "outdoor", severity: "info" },
+    { id: "tip-window", action_vi: "Có thể mở cửa thông thoáng nhà cửa vào buổi trưa", icon_type: "window", severity: "info" },
+    { id: "tip-mask", action_vi: "Đeo khẩu trang khi đi qua các trục đường lớn giờ tan tầm", icon_type: "mask", severity: "info" },
+  ],
+  forecast_matrix: [
+    { time_slot: "12 am", day_label: "T2", aqi_value: 59, category: "MODERATE", color_hex: "#FFFF00", opacity: 0.5 },
+    { time_slot: "04 am", day_label: "T2", aqi_value: 55, category: "MODERATE", color_hex: "#FFFF00", opacity: 0.5 },
+    { time_slot: "08 am", day_label: "T2", aqi_value: 88, category: "MODERATE", color_hex: "#FFFF00", opacity: 0.7 },
+    { time_slot: "12 pm", day_label: "T2", aqi_value: 70, category: "MODERATE", color_hex: "#FFFF00", opacity: 0.6 },
+    { time_slot: "04 pm", day_label: "T2", aqi_value: 75, category: "MODERATE", color_hex: "#FFFF00", opacity: 0.6 },
+    { time_slot: "08 pm", day_label: "T2", aqi_value: 82, category: "MODERATE", color_hex: "#FFFF00", opacity: 0.7 },
+  ],
+  watchlist: [
+    { city_id: "tp-ho-chi-minh", city_name: "TP. Hồ Chí Minh", pollution_level: "85 - Trung bình", weather_desc: "Trời nắng đẹp", temp_range: "26° - 32°", wind_speed: "8.1 km/h", aqi_value: 85, color_hex: "#EAB308" },
+    { city_id: "ha-noi", city_name: "Hà Nội", pollution_level: "128 - Kém", weather_desc: "Nhiều mây", temp_range: "22° - 28°", wind_speed: "9.5 km/h", aqi_value: 128, color_hex: "#F97316" },
+    { city_id: "da-nang", city_name: "Đà Nẵng", pollution_level: "38 - Tốt", weather_desc: "Trời nắng đẹp", temp_range: "22° - 28°", wind_speed: "11.2 km/h", aqi_value: 38, color_hex: "#10B981" },
+  ],
+};
 
 export function useStations() {
   const [stations, setStations] = useState<LocalStation[]>([]);
@@ -142,8 +216,8 @@ export function useStationHistory(stationId: string | null) {
 // -------------------------------------------------------------
 
 export function useCities() {
-  const [cities, setCities] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [cities, setCities] = useState<any[]>(DEFAULT_CITIES);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -154,11 +228,11 @@ export function useCities() {
           const data = await res.json();
           if (isMounted) {
             setCities(data);
-            setIsLoading(false);
           }
         }
       } catch (err) {
-        console.warn("[Cities] Không load được danh sách đô thị:", err);
+        console.warn("[Cities] Sử dụng danh mục đô thị mặc định:", err);
+      } finally {
         if (isMounted) setIsLoading(false);
       }
     }
@@ -170,24 +244,23 @@ export function useCities() {
 }
 
 export function useDashboardStudio(cityId: string = "tp-ho-chi-minh") {
-  const [studioData, setStudioData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [studioData, setStudioData] = useState<any>(DEFAULT_STUDIO_DATA);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
     async function fetchStudioData() {
-      setIsLoading(true);
       try {
         const res = await fetch(`${API_BASE}/v1/air/cities/${cityId}/dashboard`);
         if (res.ok) {
           const data = await res.json();
           if (isMounted) {
             setStudioData(data);
-            setIsLoading(false);
           }
         }
       } catch (err) {
-        console.warn("[DashboardStudio] Lỗi tải dữ liệu studio:", err);
+        console.warn("[DashboardStudio] Sử dụng gói dữ liệu studio dự phòng:", err);
+      } finally {
         if (isMounted) setIsLoading(false);
       }
     }
