@@ -494,7 +494,7 @@ export default function MapLibreView({
       age: number;
       maxAge: number;
       speedMult: number;
-      trail: { x: number; y: number }[];
+      trail: { lng: number; lat: number }[];
     }
 
     const particleCount = 120;
@@ -533,15 +533,6 @@ export default function MapLibreView({
 
     let isRunning = true;
 
-    // Reset trail khi người dùng kéo/zoom bản đồ để loại bỏ vệt kéo dài đột ngột
-    const handleMapMove = () => {
-      particles.forEach((p) => {
-        p.trail = [];
-      });
-    };
-    map.on("movestart", handleMapMove);
-    map.on("zoomstart", handleMapMove);
-
     function renderWind() {
       if (!isRunning || !ctx || !canvas || !map) return;
 
@@ -554,13 +545,20 @@ export default function MapLibreView({
         // 1. Lấy vector vận tốc và chỉ số AQI cục bộ tại tọa độ địa lý của hạt
         const { u, v, aqi } = getWindAndAqiAt(p.lng, p.lat);
 
-        // 2. Di chuyển hạt theo kinh/vĩ độ thực tế (1 độ ~ 111km)
+        // 2. Lưu vết lịch sử theo TỌA ĐỘ ĐỊA LÝ THỰC (Lng, Lat)
+        // BẢO ĐẢM KHI KÉO MAP TOÀN BỘ ĐUÔI HẠT TRÔI NGUYÊN VẸN CÙNG ĐỊA HÌNH, KHÔNG BỊ DÃN BIẾN DẠNG
+        p.trail.push({ lng: p.lng, lat: p.lat });
+        if (p.trail.length > 7) {
+          p.trail.shift();
+        }
+
+        // 3. Di chuyển hạt theo kinh/vĩ độ thực tế (1 độ ~ 111km)
         const dt = 0.000075 * p.speedMult;
         p.lng += u * dt;
         p.lat += v * dt;
         p.age++;
 
-        // 3. Chiếu tọa độ địa lý sang pixel màn hình hiện tại
+        // 4. Chiếu tọa độ địa lý sang pixel màn hình hiện tại
         const screenPt = map.project([p.lng, p.lat]);
 
         // Nếu hạt vượt ra ngoài khung nhìn địa lý hoặc hết vòng đời -> Tái sinh
@@ -579,15 +577,18 @@ export default function MapLibreView({
           return;
         }
 
-        // Lưu vết vệt gió (Trail)
-        p.trail.push({ x: screenPt.x, y: screenPt.y });
-        if (p.trail.length > 7) {
-          p.trail.shift();
-        }
-
         if (p.trail.length < 2) return;
 
-        // 4. Đổi màu hạt theo mức độ ô nhiễm AQI (Pollution Advection Flow)
+        // 5. Chiếu TOÀN BỘ các điểm đuôi địa lý sang pixel màn hình theo camera hiện tại
+        // Đảm bảo đuôi hạt bám 100% vào mặt đất, kể cả khi người dùng kéo map nhanh
+        const screenTrail: { x: number; y: number }[] = [];
+        for (let j = 0; j < p.trail.length; j++) {
+          const pt = map.project([p.trail[j].lng, p.trail[j].lat]);
+          screenTrail.push({ x: pt.x, y: pt.y });
+        }
+        screenTrail.push({ x: screenPt.x, y: screenPt.y });
+
+        // 6. Đổi màu hạt theo mức độ ô nhiễm AQI (Pollution Advection Flow)
         let strokeColor = "rgba(56, 189, 248, 0.65)"; // Sky blue
         if (aqi <= 50) {
           strokeColor = "rgba(16, 185, 129, 0.75)"; // Trong lành - Xanh ngọc
@@ -599,21 +600,21 @@ export default function MapLibreView({
           strokeColor = "rgba(239, 68, 68, 0.95)"; // Xấu/Nguy hại - Đỏ
         }
 
-        // 5. Vẽ vệt uốn lượn mềm mại
+        // 7. Vẽ vệt uốn lượn mềm mại
         ctx.strokeStyle = strokeColor;
         ctx.lineWidth = 1.8;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
 
         ctx.beginPath();
-        ctx.moveTo(p.trail[0].x, p.trail[0].y);
-        for (let j = 1; j < p.trail.length; j++) {
-          ctx.lineTo(p.trail[j].x, p.trail[j].y);
+        ctx.moveTo(screenTrail[0].x, screenTrail[0].y);
+        for (let j = 1; j < screenTrail.length; j++) {
+          ctx.lineTo(screenTrail[j].x, screenTrail[j].y);
         }
         ctx.stroke();
 
-        // 6. Điểm sáng nhẹ ở đầu hạt gió
-        const head = p.trail[p.trail.length - 1];
+        // 8. Điểm sáng nhẹ ở đầu hạt gió
+        const head = screenTrail[screenTrail.length - 1];
         ctx.fillStyle = strokeColor;
         ctx.beginPath();
         ctx.arc(head.x, head.y, 1.2, 0, Math.PI * 2);
@@ -633,8 +634,6 @@ export default function MapLibreView({
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
-      map.off("movestart", handleMapMove);
-      map.off("zoomstart", handleMapMove);
       window.removeEventListener("resize", updateCanvasSize);
     };
   }, [showWindStream, getWindAndAqiAt]);
