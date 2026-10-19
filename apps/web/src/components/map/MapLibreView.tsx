@@ -377,12 +377,85 @@ export default function MapLibreView({
     }
   }, [inspectedPoint]);
 
-  // TÍNH NĂNG 3: DÒNG GIÓ ĐỘNG 60FPS (WIND STREAM LAYER)
+  // --------------------------------------------------------------------------
+  // BỘ NỘI SUY TRƯỜNG GIÓ ĐỊA LÝ & CHẤT LƯỢNG KHÔNG KHÍ (SPATIAL WIND & AQI FIELD)
+  // --------------------------------------------------------------------------
+  const getWindAndAqiAt = useCallback((lng: number, lat: number) => {
+    // Xác định macro wind cơ bản theo vĩ độ Việt Nam
+    // Miền Nam (<12.0): Gió Tây Nam (thổi TỚI Đông Bắc ~45°)
+    // Miền Trung (12.0 - 18.0): Gió Biển Đông (thổi TỚI Tây Tây Nam ~250°)
+    // Miền Bắc (>18.0): Gió Đông Bắc (thổi TỚI Tây Nam ~225°)
+    let baseDeg = 225; // Thổi TỪ Tây Nam
+    let baseSpeed = 8.5; // km/h
+    if (lat > 18.0) {
+      baseDeg = 45; // Thổi TỪ Đông Bắc (Hà Nội, Hải Phòng)
+      baseSpeed = 10.2;
+    } else if (lat > 13.0) {
+      baseDeg = 85; // Thổi TỪ Biển Đông vào (Đà Nẵng, Huế)
+      baseSpeed = 12.0;
+    }
+
+    // Góc gió thổi TỚI (wind blows TOWARDS)
+    const baseTowardsRad = ((baseDeg + 180) % 360) * (Math.PI / 180);
+
+    // Tính toán ảnh hưởng vi khí hậu từ các trạm quan trắc xung quanh
+    let totalWeight = 0;
+    let weightedU = 0;
+    let weightedV = 0;
+    let weightedAqi = 0;
+
+    for (const s of stations) {
+      const dLng = s.longitude - lng;
+      const dLat = s.latitude - lat;
+      const distSq = dLng * dLng + dLat * dLat;
+      const dist = Math.sqrt(distSq);
+
+      // Bán kính ảnh hưởng vi khí hậu địa phương ~35km (0.35 độ)
+      if (dist < 0.35) {
+        const weight = 1 / Math.max(0.0005, dist * dist);
+        totalWeight += weight;
+
+        // Góc vi khí hậu uốn lượn theo địa hình trạm (sông ngòi, ven biển)
+        const localAngleOffset = Math.sin(s.latitude * 24 + s.longitude * 16) * 0.4;
+        const localTowardsRad = baseTowardsRad + localAngleOffset;
+        const localSpeed = baseSpeed + (Math.sin(s.latitude * 35) * 2.2);
+
+        weightedU += Math.sin(localTowardsRad) * localSpeed * weight;
+        weightedV += Math.cos(localTowardsRad) * localSpeed * weight;
+
+        const aqiVal = s.latest_aqi?.aqi_value || 65;
+        weightedAqi += aqiVal * weight;
+      }
+    }
+
+    if (totalWeight > 0) {
+      return {
+        u: weightedU / totalWeight,
+        v: weightedV / totalWeight,
+        aqi: weightedAqi / totalWeight,
+      };
+    }
+
+    // Ngoại suy ngoài xa: Macro wind có nhiễu xoáy nhẹ
+    const macroOffset = Math.sin(lat * 16 + lng * 14) * 0.25;
+    const finalTowardsRad = baseTowardsRad + macroOffset;
+    return {
+      u: Math.sin(finalTowardsRad) * baseSpeed,
+      v: Math.cos(finalTowardsRad) * baseSpeed,
+      aqi: 60,
+    };
+  }, [stations]);
+
+  // --------------------------------------------------------------------------
+  // TÍNH NĂNG 3: DÒNG GIÓ ĐỊA LÝ ĐỐI LƯU BỤI MỊN 60FPS (GEOREFERENCED WIND STREAM)
+  // --------------------------------------------------------------------------
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !showWindStream) {
+    const map = mapRef.current;
+    if (!canvas || !showWindStream || !map) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
       return;
     }
@@ -390,55 +463,161 @@ export default function MapLibreView({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Kích thước canvas đồng bộ viewport
-    canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
-    canvas.height = canvas.parentElement?.clientHeight || window.innerHeight;
+    // Kích thước canvas đồng bộ khung nhìn
+    const updateCanvasSize = () => {
+      const parent = canvas.parentElement;
+      const width = parent?.clientWidth || window.innerWidth;
+      const height = parent?.clientHeight || window.innerHeight;
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+    };
+    updateCanvasSize();
 
-    // Tạo các hạt gió (particles)
-    const particleCount = 75;
-    const particles: { x: number; y: number; length: number; speed: number; opacity: number }[] = [];
+    // Giới hạn địa lý hiện tại của viewport (kèm padding 15% để sinh hạt ngoài mép)
+    const getActiveBounds = () => {
+      const b = map.getBounds();
+      const lngPadding = (b.getEast() - b.getWest()) * 0.15;
+      const latPadding = (b.getNorth() - b.getSouth()) * 0.15;
+      return {
+        minLng: b.getWest() - lngPadding,
+        maxLng: b.getEast() + lngPadding,
+        minLat: b.getSouth() - latPadding,
+        maxLat: b.getNorth() + latPadding,
+      };
+    };
 
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        length: Math.random() * 18 + 12,
-        speed: Math.random() * 1.5 + 1.2,
-        opacity: Math.random() * 0.5 + 0.3,
-      });
+    interface GeoParticle {
+      lng: number;
+      lat: number;
+      age: number;
+      maxAge: number;
+      speedMult: number;
+      trail: { x: number; y: number }[];
     }
 
-    // Góc gió Tây Nam sang Đông Bắc (~45 độ)
-    const angle = (45 * Math.PI) / 180;
-    const dx = Math.cos(angle);
-    const dy = -Math.sin(angle); // Hướng lên trên và sang phải
+    const particleCount = 120;
+    const particles: GeoParticle[] = [];
+
+    const spawnParticle = (p?: GeoParticle): GeoParticle => {
+      const bounds = getActiveBounds();
+      const lng = bounds.minLng + Math.random() * (bounds.maxLng - bounds.minLng);
+      const lat = bounds.minLat + Math.random() * (bounds.maxLat - bounds.minLat);
+      const maxAge = Math.floor(Math.random() * 85 + 65);
+      const speedMult = Math.random() * 0.4 + 0.8;
+
+      if (p) {
+        p.lng = lng;
+        p.lat = lat;
+        p.age = 0;
+        p.maxAge = maxAge;
+        p.speedMult = speedMult;
+        p.trail = [];
+        return p;
+      }
+
+      return {
+        lng,
+        lat,
+        age: Math.floor(Math.random() * maxAge),
+        maxAge,
+        speedMult,
+        trail: [],
+      };
+    };
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(spawnParticle());
+    }
 
     let isRunning = true;
 
-    function renderWind() {
-      if (!isRunning || !ctx || !canvas) return;
+    // Reset trail khi người dùng kéo/zoom bản đồ để loại bỏ vệt kéo dài đột ngột
+    const handleMapMove = () => {
+      particles.forEach((p) => {
+        p.trail = [];
+      });
+    };
+    map.on("movestart", handleMapMove);
+    map.on("zoomstart", handleMapMove);
 
+    function renderWind() {
+      if (!isRunning || !ctx || !canvas || !map) return;
+
+      // Xóa khung hình Canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.lineWidth = 1.5;
-      ctx.lineCap = "round";
+
+      const bounds = getActiveBounds();
 
       particles.forEach((p) => {
-        ctx.strokeStyle = `rgba(56, 189, 248, ${p.opacity})`;
+        // 1. Lấy vector vận tốc và chỉ số AQI cục bộ tại tọa độ địa lý của hạt
+        const { u, v, aqi } = getWindAndAqiAt(p.lng, p.lat);
+
+        // 2. Di chuyển hạt theo kinh/vĩ độ thực tế (1 độ ~ 111km)
+        const dt = 0.000075 * p.speedMult;
+        p.lng += u * dt;
+        p.lat += v * dt;
+        p.age++;
+
+        // 3. Chiếu tọa độ địa lý sang pixel màn hình hiện tại
+        const screenPt = map.project([p.lng, p.lat]);
+
+        // Nếu hạt vượt ra ngoài khung nhìn địa lý hoặc hết vòng đời -> Tái sinh
+        if (
+          p.age >= p.maxAge ||
+          p.lng < bounds.minLng ||
+          p.lng > bounds.maxLng ||
+          p.lat < bounds.minLat ||
+          p.lat > bounds.maxLat ||
+          screenPt.x < -60 ||
+          screenPt.x > canvas.width + 60 ||
+          screenPt.y < -60 ||
+          screenPt.y > canvas.height + 60
+        ) {
+          spawnParticle(p);
+          return;
+        }
+
+        // Lưu vết vệt gió (Trail)
+        p.trail.push({ x: screenPt.x, y: screenPt.y });
+        if (p.trail.length > 7) {
+          p.trail.shift();
+        }
+
+        if (p.trail.length < 2) return;
+
+        // 4. Đổi màu hạt theo mức độ ô nhiễm AQI (Pollution Advection Flow)
+        let strokeColor = "rgba(56, 189, 248, 0.65)"; // Sky blue
+        if (aqi <= 50) {
+          strokeColor = "rgba(16, 185, 129, 0.75)"; // Trong lành - Xanh ngọc
+        } else if (aqi <= 100) {
+          strokeColor = "rgba(234, 179, 8, 0.8)"; // Trung bình - Vàng hổ phách
+        } else if (aqi <= 150) {
+          strokeColor = "rgba(249, 115, 22, 0.9)"; // Kém - Cam nóng
+        } else {
+          strokeColor = "rgba(239, 68, 68, 0.95)"; // Xấu/Nguy hại - Đỏ
+        }
+
+        // 5. Vẽ vệt uốn lượn mềm mại
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 1.8;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
 
         ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(p.x + dx * p.length, p.y + dy * p.length);
+        ctx.moveTo(p.trail[0].x, p.trail[0].y);
+        for (let j = 1; j < p.trail.length; j++) {
+          ctx.lineTo(p.trail[j].x, p.trail[j].y);
+        }
         ctx.stroke();
 
-        // Di chuyển hạt
-        p.x += dx * p.speed;
-        p.y += dy * p.speed;
-
-        // Vòng lặp khi ra ngoài màn hình
-        if (p.x > canvas.width + 30 || p.y < -30) {
-          p.x = Math.random() * canvas.width * 0.8;
-          p.y = canvas.height + Math.random() * 20;
-        }
+        // 6. Điểm sáng nhẹ ở đầu hạt gió
+        const head = p.trail[p.trail.length - 1];
+        ctx.fillStyle = strokeColor;
+        ctx.beginPath();
+        ctx.arc(head.x, head.y, 1.2, 0, Math.PI * 2);
+        ctx.fill();
       });
 
       animationFrameRef.current = requestAnimationFrame(renderWind);
@@ -446,15 +625,21 @@ export default function MapLibreView({
 
     renderWind();
 
+    window.addEventListener("resize", updateCanvasSize);
+
     return () => {
       isRunning = false;
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
+      map.off("movestart", handleMapMove);
+      map.off("zoomstart", handleMapMove);
+      window.removeEventListener("resize", updateCanvasSize);
     };
-  }, [showWindStream]);
+  }, [showWindStream, getWindAndAqiAt]);
 
-  // ĐỒNG BỘ 100% CẤP PHƯỜNG / XÃ TRÊN TOÀN BỘ MARKER
+  // ĐỒNG BỘ 100% CẤP PHƯỜNG / XÃ TRÊN TOÀN BỘ MARKER (KHÔNG CÓ ĐỘ TRỄ CSS TRANSFORM)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -487,7 +672,8 @@ export default function MapLibreView({
 
       if (!marker) {
         const el = document.createElement("div");
-        el.className = "station-marker cursor-pointer flex flex-col items-center transition-transform duration-150";
+        // LOẠI BỎ transition-transform để marker bám chặt 60fps tức thì khi kéo bản đồ
+        el.className = "station-marker cursor-pointer flex flex-col items-center select-none pointer-events-auto";
         el.style.willChange = "transform";
         el.innerHTML = `
           <div class="badge flex items-center justify-center w-9 h-9 rounded-full font-bold text-xs text-neutral-950 border border-white/80 shadow-md transition-all duration-200"
@@ -519,10 +705,13 @@ export default function MapLibreView({
       }
 
       const el = marker.getElement();
+      const badge = el.querySelector(".badge");
       if (isSelected) {
-        el.classList.add("scale-125", "z-30");
+        badge?.classList.add("scale-125", "ring-2", "ring-white");
+        el.classList.add("z-30");
       } else {
-        el.classList.remove("scale-125", "z-30");
+        badge?.classList.remove("scale-125", "ring-2", "ring-white");
+        el.classList.remove("z-30");
       }
     });
   }, [stations, selectedStation, onSelectStation]);
