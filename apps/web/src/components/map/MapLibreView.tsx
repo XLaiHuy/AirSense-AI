@@ -27,6 +27,7 @@ interface MapLibreViewProps {
     avoidedExposurePercent: number;
   } | null;
   onClearRoute?: () => void;
+  flyToTarget?: { lat: number; lon: number; zoom?: number; timestamp: number } | null;
 }
 
 const STYLES = {
@@ -46,6 +47,7 @@ export default function MapLibreView({
   currentTheme,
   activeRoute,
   onClearRoute,
+  flyToTarget,
 }: MapLibreViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -336,6 +338,20 @@ export default function MapLibreView({
       essential: true,
     });
   }, [selectedCity]);
+
+  // Camera bay tới mục tiêu tìm kiếm hoặc vị trí GPS người dùng (FlyTo Target)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !flyToTarget) return;
+
+    map.flyTo({
+      center: [flyToTarget.lon, flyToTarget.lat],
+      zoom: flyToTarget.zoom || 13.5,
+      speed: 1.5,
+      curve: 1.3,
+      essential: true,
+    });
+  }, [flyToTarget]);
 
   // Điểm kiểm tra ảo Click-to-Inspect (Cột Cờ Định Vị & Sóng Radar Chuẩn Xác)
   useEffect(() => {
