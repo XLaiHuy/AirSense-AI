@@ -511,9 +511,11 @@ export default function MapLibreView({
       maxAge: number;
       speedMult: number;
       trail: { lng: number; lat: number }[];
+      cachedVector?: { u: number; v: number; aqi: number };
     }
 
-    const particleCount = 120;
+    // TỐI ƯU HIỆU NĂNG 60FPS: Giảm từ 120 hạt xuống 68 hạt (đủ dày và mượt, giảm 43% tải CPU)
+    const particleCount = 68;
     const particles: GeoParticle[] = [];
 
     const spawnParticle = (p?: GeoParticle): GeoParticle => {
@@ -530,6 +532,7 @@ export default function MapLibreView({
         p.maxAge = maxAge;
         p.speedMult = speedMult;
         p.trail = [];
+        delete p.cachedVector;
         return p;
       }
 
@@ -558,23 +561,25 @@ export default function MapLibreView({
       const bounds = getActiveBounds();
 
       particles.forEach((p) => {
-        // 1. Lấy vector vận tốc và chỉ số AQI cục bộ tại tọa độ địa lý của hạt
-        const { u, v, aqi } = getWindAndAqiAt(p.lng, p.lat);
+        // TỐI ƯU CACHE VECTOR: Chỉ tính lại nội suy địa lý mỗi 10 frame (giảm 90% chi phí tính toán lượng giác)
+        if (!p.cachedVector || p.age % 10 === 0) {
+          p.cachedVector = getWindAndAqiAt(p.lng, p.lat);
+        }
+        const { u, v, aqi } = p.cachedVector;
 
-        // 2. Lưu vết lịch sử theo TỌA ĐỘ ĐỊA LÝ THỰC (Lng, Lat)
-        // BẢO ĐẢM KHI KÉO MAP TOÀN BỘ ĐUÔI HẠT TRÔI NGUYÊN VẸN CÙNG ĐỊA HÌNH, KHÔNG BỊ DÃN BIẾN DẠNG
+        // Lưu vết lịch sử theo TỌA ĐỘ ĐỊA LÝ THỰC (rút gọn còn 4 điểm để giảm số lần map.project WebGL)
         p.trail.push({ lng: p.lng, lat: p.lat });
-        if (p.trail.length > 7) {
+        if (p.trail.length > 4) {
           p.trail.shift();
         }
 
-        // 3. Di chuyển hạt theo kinh/vĩ độ thực tế (1 độ ~ 111km)
+        // Di chuyển hạt theo kinh/vĩ độ thực tế
         const dt = 0.000075 * p.speedMult;
         p.lng += u * dt;
         p.lat += v * dt;
         p.age++;
 
-        // 4. Chiếu tọa độ địa lý sang pixel màn hình hiện tại
+        // Chiếu tọa độ địa lý sang pixel màn hình hiện tại
         const screenPt = map.project([p.lng, p.lat]);
 
         // Nếu hạt vượt ra ngoài khung nhìn địa lý hoặc hết vòng đời -> Tái sinh
@@ -595,8 +600,7 @@ export default function MapLibreView({
 
         if (p.trail.length < 2) return;
 
-        // 5. Chiếu TOÀN BỘ các điểm đuôi địa lý sang pixel màn hình theo camera hiện tại
-        // Đảm bảo đuôi hạt bám 100% vào mặt đất, kể cả khi người dùng kéo map nhanh
+        // Chiếu các điểm đuôi địa lý sang pixel màn hình
         const screenTrail: { x: number; y: number }[] = [];
         for (let j = 0; j < p.trail.length; j++) {
           const pt = map.project([p.trail[j].lng, p.trail[j].lat]);
@@ -604,19 +608,18 @@ export default function MapLibreView({
         }
         screenTrail.push({ x: screenPt.x, y: screenPt.y });
 
-        // 6. Đổi màu hạt theo mức độ ô nhiễm AQI (Pollution Advection Flow)
-        let strokeColor = "rgba(56, 189, 248, 0.65)"; // Sky blue
+        // Đổi màu hạt theo mức độ ô nhiễm AQI
+        let strokeColor = "rgba(56, 189, 248, 0.65)";
         if (aqi <= 50) {
-          strokeColor = "rgba(16, 185, 129, 0.75)"; // Trong lành - Xanh ngọc
+          strokeColor = "rgba(16, 185, 129, 0.75)";
         } else if (aqi <= 100) {
-          strokeColor = "rgba(234, 179, 8, 0.8)"; // Trung bình - Vàng hổ phách
+          strokeColor = "rgba(234, 179, 8, 0.8)";
         } else if (aqi <= 150) {
-          strokeColor = "rgba(249, 115, 22, 0.9)"; // Kém - Cam nóng
+          strokeColor = "rgba(249, 115, 22, 0.9)";
         } else {
-          strokeColor = "rgba(239, 68, 68, 0.95)"; // Xấu/Nguy hại - Đỏ
+          strokeColor = "rgba(239, 68, 68, 0.95)";
         }
 
-        // 7. Vẽ vệt uốn lượn mềm mại
         ctx.strokeStyle = strokeColor;
         ctx.lineWidth = 1.8;
         ctx.lineCap = "round";
@@ -629,7 +632,7 @@ export default function MapLibreView({
         }
         ctx.stroke();
 
-        // 8. Điểm sáng nhẹ ở đầu hạt gió
+        // Điểm sáng nhẹ ở đầu hạt gió
         const head = screenTrail[screenTrail.length - 1];
         ctx.fillStyle = strokeColor;
         ctx.beginPath();
@@ -640,12 +643,25 @@ export default function MapLibreView({
       animationFrameRef.current = requestAnimationFrame(renderWind);
     }
 
-    renderWind();
+    // TỐI ƯU KHỞI ĐỘNG: Chờ map style tải và render khung ban đầu ổn định rồi mới chạy vòng lặp hạt gió
+    let initTimer: any = null;
+    if (map.isStyleLoaded()) {
+      initTimer = setTimeout(() => {
+        if (isRunning) renderWind();
+      }, 150);
+    } else {
+      map.once("idle", () => {
+        initTimer = setTimeout(() => {
+          if (isRunning) renderWind();
+        }, 150);
+      });
+    }
 
     window.addEventListener("resize", updateCanvasSize);
 
     return () => {
       isRunning = false;
+      if (initTimer) clearTimeout(initTimer);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
