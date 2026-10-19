@@ -14,6 +14,8 @@ class Settings:
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     OPENAQ_API_KEY: str = os.getenv("OPENAQ_API_KEY", "")
     CORS_ORIGINS: List[str] = [
+        "*",
+        "https://air-sense-ai-six.vercel.app",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:8000",

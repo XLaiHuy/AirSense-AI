@@ -12,11 +12,11 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Cấu hình CORS cho Next.js Web Client
+# Cấu hình CORS cho Next.js Web Client & Vercel
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
